@@ -18,7 +18,7 @@ function closure(
         return Closure::fromCallable($callable);
     }
 
-    if (InvokableReflection::isValid($callable, $invoke)) {
+    if (!InvokableReflection::invokable($callable, $invoke)) {
         throw new TypeError(
             sprintf(
                 'Failed to create closure from callable: class "%s" does not exist or is not invokable',
@@ -97,4 +97,13 @@ function binding(
     return new ClosureBinding(
         $closure
     );
+}
+
+function invokable(mixed $object, string $invoke = null): bool
+{
+    if (is_callable($object)) {
+        return true;
+    }
+
+    return InvokableReflection::invokable($object, $invoke);
 }

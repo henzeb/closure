@@ -156,13 +156,6 @@ call(
 ); // returns Hello World!
 ````
 
-````php
-
-call(fn()=>'Hello world!'); // returns Hello World!
-call(Invokable::class, resolve: fn($class)=>new $class('Hello World!'));
-
-````
-
 ## Invoking different methods
 
 In some cases you'd like to wrap a non-callable FQCN or class.
@@ -185,6 +178,23 @@ use function Henzeb\Closure\call;
 closure(NonInvokable::class, invoke: 'hello')(); // prints Hello World!;
 bind(NonInvokable::class, $newthis, invoke: 'hello')(); // prints Hello World!;
 call(NonInvokable::class, $newthis, invoke: 'hello'); // prints Hello World!;
+
+````
+
+## invokable
+
+To test an object is invokable, and thus can become a closure.
+The function accepts any value.
+
+````php
+use function Henzeb\Closure\invokable;
+
+invokable(NonInvokable::class); // returns false
+invokable(NonInvokable::class, 'hello'); // returns true
+
+invokable(InvokableClass::class); // returns true
+invokable([]); // returns false
+invokable(STDIN); // returns false
 
 ````
 

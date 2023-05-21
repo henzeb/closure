@@ -3,12 +3,16 @@
 namespace Henzeb\Closure\Support;
 
 use Closure;
+use ReflectionException;
 use ReflectionFunction;
 
 class ClosureBinding
 {
     private ReflectionFunction $reflection;
 
+    /**
+     * @throws ReflectionException
+     */
     public function __construct(Closure $closure)
     {
         $this->reflection = new ReflectionFunction($closure);

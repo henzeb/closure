@@ -11,6 +11,7 @@ use function Henzeb\Closure\bind;
 use function Henzeb\Closure\binding;
 use function Henzeb\Closure\call;
 use function Henzeb\Closure\closure;
+use function Henzeb\Closure\invokable;
 
 class ClosureTest extends TestCase
 {
@@ -475,5 +476,27 @@ class ClosureTest extends TestCase
 
         $this->assertNull($binding->getScope());
         $this->assertNull($binding->getThis());
+    }
+
+    public function testInvokable()
+    {
+        $class = new class {
+            public function test()
+            {
+            }
+        };
+        $invokableClass = new class {
+            public function __invoke()
+            {
+            }
+        };
+
+        $array = [];
+
+        $this->assertTrue(invokable($invokableClass));
+        $this->assertFalse(invokable($class));
+        $this->assertTrue(invokable($class, 'test'));
+        $this->assertFalse(invokable($array));
+        $this->assertFalse(invokable(STDIN));
     }
 }
