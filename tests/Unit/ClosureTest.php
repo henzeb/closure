@@ -26,6 +26,7 @@ class ClosureTest extends TestCase
         $this->assertEquals('hello world', $closure('hello world'));
     }
 
+
     public function testArrowFunction()
     {
         $closure = closure(
@@ -134,7 +135,7 @@ class ClosureTest extends TestCase
 
             public function __construct(bool $throw = true)
             {
-                if($throw) {
+                if ($throw) {
                     throw new Exception('Failed to delay construction.');
                 }
             }
@@ -152,27 +153,6 @@ class ClosureTest extends TestCase
         $closure();
     }
 
-    public function testAllowBinding()
-    {
-        $class = new class(false) {
-
-            public function __construct(bool $throw = true)
-            {
-                if($throw) {
-                    throw new Exception('Failed to delay construction.');
-                }
-            }
-
-            public function __invoke()
-            {
-            }
-        };
-
-        $this->expectException(Exception::class);
-
-        closure($class::class, allowBinding: true);
-    }
-
     public function testBind()
     {
         $class = new class {
@@ -181,7 +161,28 @@ class ClosureTest extends TestCase
 
         $this->assertSame(
             'hello world',
-            bind(fn()=>$this->hello, $class)()
+            bind(fn() => $this->hello, $class)()
+        );
+    }
+
+    public function testBindInvokable()
+    {
+        $class = new class {
+            private string $hello = 'hello world';
+        };
+
+        $invokable = new class {
+            public function __invoke(): Closure
+            {
+                return function() {
+                    return $this->hello;
+                };
+            }
+        };
+
+        $this->assertSame(
+            'hello world',
+            bind($invokable::class, $class)()
         );
     }
 
@@ -193,7 +194,30 @@ class ClosureTest extends TestCase
 
         $this->assertSame(
             'hello world',
-            bind(fn()=>$this->hello, $class, HelloWorld::class)()
+            bind(fn() => $this->hello, $class, HelloWorld::class)()
+        );
+    }
+
+    public function testCallWithoutBinding() {
+        $class = new class {
+            public function __invoke() {
+                return 'hello world';
+            }
+        };
+
+        $this->assertSame(
+            'hello world',
+            call($class::class)
+        );
+
+        $this->assertSame(
+            'hello world',
+            call($class)
+        );
+
+        $this->assertSame(
+            'hello world',
+            call(fn()=>'hello world')
         );
     }
 
@@ -205,7 +229,28 @@ class ClosureTest extends TestCase
 
         $this->assertSame(
             'hello world',
-            call(fn()=>$this->hello, $class)
+            call(fn() => $this->hello, $class)
+        );
+    }
+
+    public function testCallInvokable()
+    {
+        $class = new class {
+            private string $hello = 'hello world';
+        };
+
+        $invokable = new class {
+            public function __invoke(): Closure
+            {
+                return function() {
+                    return $this->hello;
+                };
+            }
+        };
+
+        $this->assertSame(
+            'hello world',
+            call($invokable::class, $class)
         );
     }
 
@@ -217,7 +262,88 @@ class ClosureTest extends TestCase
 
         $this->assertSame(
             'hello world',
-            call(fn()=>$this->hello, $class, HelloWorld::class)
+            call(fn() => $this->hello, $class, HelloWorld::class)
         );
+    }
+
+    public function testClosureWithDifferentMethod()
+    {
+        $nonInvokable = new class {
+            public function test(string $passable): bool
+            {
+                return $passable === 'hello';
+            }
+        };
+        $closure = closure($nonInvokable::class, invoke: 'test');
+
+        $this->assertTrue($closure('hello'));
+        $this->assertFalse($closure('world'));
+
+        $this->expectException(TypeError::class);
+
+        closure($nonInvokable::class, invoke: 'fails');
+    }
+
+    public function testCallableObjectWithDifferentMethod()
+    {
+        $nonInvokable = new class {
+            public function test(string $passable): bool
+            {
+                return $passable === 'hello';
+            }
+        };
+        $closure = closure($nonInvokable, invoke: 'test');
+
+        $this->assertTrue($closure('hello'));
+        $this->assertFalse($closure('world'));
+
+        $this->expectException(TypeError::class);
+
+        closure($nonInvokable, invoke: 'fails');
+    }
+
+
+    public function testCallWithDifferentMethod()
+    {
+        $nonInvokable = new class {
+            public function __invoke(): bool
+            {
+                return false;
+            }
+
+            public function test(): bool
+            {
+                return true;
+            }
+        };
+        $result = call($nonInvokable::class, $this, invoke: 'test');
+
+        $this->assertTrue($result);
+
+        $this->expectException(TypeError::class);
+
+        call($nonInvokable::class, $this, invoke: 'fails');
+    }
+
+    public function testBindWithDifferentMethod()
+    {
+        $nonInvokable = new class {
+            public function __invoke(): bool
+            {
+                return false;
+            }
+
+            public function test(): bool
+            {
+                return true;
+            }
+        };
+        $result = bind($nonInvokable::class, $this, invoke: 'test')();
+
+        $this->assertTrue($result);
+
+        $this->expectException(TypeError::class);
+
+        bind($nonInvokable::class, $this, invoke: 'fails')();
     }
 }
