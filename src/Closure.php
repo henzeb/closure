@@ -8,7 +8,7 @@ use TypeError;
 
 function closure(
     callable|object|string $callable,
-    Closure                $resolve = null,
+    callable               $resolve = null,
     string                 $invoke = null
 ): Closure
 {
@@ -61,8 +61,7 @@ function bind(
             }
         }
 
-        return Closure::bind(
-            $closure,
+        return $closure->bindTo(
             $newThis,
             $newScope ?? $newThis
         )(...func_get_args());
