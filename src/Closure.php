@@ -3,7 +3,9 @@
 namespace Henzeb\Closure;
 
 use Closure;
-use ReflectionClass;
+use Henzeb\Closure\Support\ClosureBinding;
+use Henzeb\Closure\Support\InvokableReflection;
+use ReflectionException;
 use TypeError;
 
 function closure(
@@ -16,10 +18,7 @@ function closure(
         return Closure::fromCallable($callable);
     }
 
-    $invoke = $invoke ?? '__invoke';
-
-    if ((!is_object($callable) && !class_exists($callable))
-        || !method_exists($callable, $invoke)) {
+    if (InvokableReflection::isValid($callable, $invoke)) {
         throw new TypeError(
             sprintf(
                 'Failed to create closure from callable: class "%s" does not exist or is not invokable',
@@ -34,6 +33,8 @@ function closure(
         }
         return ($resolve ? $resolve($callable) : new $callable());
     };
+
+    $invoke = InvokableReflection::getInvokeMethod($invoke);
 
     return Closure::fromCallable(
         fn() => $resolveInvokable()->$invoke(...func_get_args())
@@ -51,14 +52,8 @@ function bind(
     return function () use ($callable, $newThis, $newScope, $resolve, $invoke) {
         $closure = closure($callable, resolve: $resolve, invoke: $invoke);
 
-        if (is_string($callable) || is_object($callable)) {
-            $returnType = (new ReflectionClass($callable))
-                ->getMethod($invoke ?? '__invoke')
-                ->getReturnType();
-
-            if ($returnType?->getName() === Closure::class) {
-                $closure = $closure();
-            }
+        if (InvokableReflection::returnTypeIsClosure($callable)) {
+            $closure = $closure();
         }
 
         return $closure->bindTo(
@@ -76,9 +71,30 @@ function call(
     string                 $invoke = null
 ): mixed
 {
-    if (null === $newThis) {
+    if (null === $newThis && null === $newScope) {
         return closure($callable)();
     }
 
     return bind($callable, $newThis, $newScope, $resolve, $invoke)();
+}
+
+
+/**
+ * @throws ReflectionException
+ */
+function binding(
+    callable|object|string $callable,
+    callable               $resolve = null,
+    string                 $invoke = null
+): ClosureBinding
+{
+    $closure = closure($callable, $resolve, $invoke);
+
+    if (InvokableReflection::returnTypeIsClosure($callable, $invoke)) {
+        $closure = $closure();
+    }
+
+    return new ClosureBinding(
+        $closure
+    );
 }

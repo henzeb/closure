@@ -188,6 +188,19 @@ call(NonInvokable::class, $newthis, invoke: 'hello'); // prints Hello World!;
 
 ````
 
+## Bindings
+
+In some cases you might want to know the current binding of a
+closure or invokable.
+
+````php
+use function Henzeb\Closure\binding;
+
+binding(function(){})->getScope(); // returns $newScope value
+binding(function(){})->getThis(); // returns $newThis value
+
+````
+
 ## Testing this package
 
 ```bash

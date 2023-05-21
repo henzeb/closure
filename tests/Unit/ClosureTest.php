@@ -8,6 +8,7 @@ use Henzeb\Closure\Tests\Stubs\HelloWorld;
 use PHPUnit\Framework\TestCase;
 use TypeError;
 use function Henzeb\Closure\bind;
+use function Henzeb\Closure\binding;
 use function Henzeb\Closure\call;
 use function Henzeb\Closure\closure;
 
@@ -174,7 +175,7 @@ class ClosureTest extends TestCase
         $invokable = new class {
             public function __invoke(): Closure
             {
-                return function() {
+                return function () {
                     return $this->hello;
                 };
             }
@@ -198,9 +199,11 @@ class ClosureTest extends TestCase
         );
     }
 
-    public function testCallWithoutBinding() {
+    public function testCallWithoutBinding()
+    {
         $class = new class {
-            public function __invoke() {
+            public function __invoke()
+            {
                 return 'hello world';
             }
         };
@@ -217,7 +220,7 @@ class ClosureTest extends TestCase
 
         $this->assertSame(
             'hello world',
-            call(fn()=>'hello world')
+            call(fn() => 'hello world')
         );
     }
 
@@ -242,7 +245,7 @@ class ClosureTest extends TestCase
         $invokable = new class {
             public function __invoke(): Closure
             {
-                return function() {
+                return function () {
                     return $this->hello;
                 };
             }
@@ -345,5 +348,132 @@ class ClosureTest extends TestCase
         $this->expectException(TypeError::class);
 
         bind($nonInvokable::class, $this, invoke: 'fails')();
+    }
+
+    public function testgetBinding()
+    {
+        $closure = function () {
+        };
+
+        $expected = new class extends HelloWorld {
+        };
+
+        $closure = $closure->bindTo($expected, HelloWorld::class);
+
+        $binding = binding($closure);
+
+        $this->assertSame(HelloWorld::class, $binding->getScope());
+        $this->assertSame($expected, $binding->getThis());
+    }
+
+    public function testgetBindingWithInvokableClass()
+    {
+        $expected = new class extends HelloWorld {
+        };
+
+        $closure = new class($expected) {
+            public function __construct(private $expected)
+            {
+            }
+
+            public function __invoke(): Closure
+            {
+                return bind(
+                    function () {
+
+                    },
+                    $this->expected,
+                    HelloWorld::class
+                );
+            }
+        };
+
+        $binding = binding($closure::class, fn() => $closure);
+
+        $this->assertSame(HelloWorld::class, $binding->getScope());
+        $this->assertSame($expected, $binding->getThis());
+    }
+
+    public function testgetBindingWithNonInvokableClass()
+    {
+        $expected = new class extends HelloWorld {
+        };
+
+        $closure = new class($expected) {
+            public function __construct(private $expected)
+            {
+            }
+
+            public function test(): Closure
+            {
+                return bind(
+                    function () {
+
+                    },
+                    $this->expected,
+                    HelloWorld::class
+                );
+            }
+        };
+
+        $binding = binding($closure::class, fn() => $closure, 'test');
+
+        $this->assertSame(HelloWorld::class, $binding->getScope());
+        $this->assertSame($expected, $binding->getThis());
+
+        $this->expectException(TypeError::class);
+
+        binding($closure::class, fn() => $closure);
+    }
+
+    public function testgetBindingWithInvokableClassWithoutScope()
+    {
+        $expected = new class extends HelloWorld {
+        };
+
+        $closure = new class($expected) {
+            public function __construct(private $expected)
+            {
+            }
+
+            public function __invoke(): Closure
+            {
+                return (
+                function () {
+                }
+                )->bindTo($this->expected, null);
+            }
+        };
+
+        $binding = binding($closure::class, fn() => $closure);
+
+        $this->assertSame(Closure::class, $binding->getScope());
+        $this->assertSame($expected, $binding->getThis());
+    }
+
+    public function testgetBindingWithInvokableClassWithoutScopeAndThis()
+    {
+        ini_set('display_errors', 1);
+        ini_set('display_startup_errors', 1);
+        error_reporting(E_ALL);
+
+        $closure = new class() {
+            public function __construct()
+            {
+            }
+
+            public function __invoke(): Closure
+            {
+                return (
+                function () {
+                }
+                )->bindTo(null, null);
+            }
+        };
+
+        $binding = binding($closure::class, fn() => $closure);
+
+        $this->assertNull($binding->getScope());
+        $this->assertNull($binding->getThis());
     }
 }

@@ -29,7 +29,10 @@
     "autoload": {
         "files": [
             "src/Closure.php"
-        ]
+        ],
+        "psr-4": {
+            "Henzeb\\Closure\\Support\\": "src/Support"
+        }
     },
     "autoload-dev": {
         "psr-4": {
