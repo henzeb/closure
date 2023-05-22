@@ -10,10 +10,9 @@ use TypeError;
 
 function closure(
     callable|object|string $callable,
-    callable               $resolve = null,
-    string                 $invoke = null
-): Closure
-{
+    callable $resolve = null,
+    string $invoke = null
+): Closure {
     if (is_callable($callable)) {
         return Closure::fromCallable($callable);
     }
@@ -37,18 +36,21 @@ function closure(
     $invoke = InvokableReflection::getInvokeMethod($invoke);
 
     return Closure::fromCallable(
-        fn() => $resolveInvokable()->$invoke(...func_get_args())
+        function () use ($resolveInvokable, $invoke) {
+            static $resolved;
+            $resolved ??= $resolveInvokable();
+            return $resolved->$invoke(...func_get_args());
+        }
     );
 }
 
 function bind(
     callable|object|string $callable,
-    ?object                $newThis,
-    string                 $newScope = null,
-    callable               $resolve = null,
-    string                 $invoke = null,
-): Closure
-{
+    ?object $newThis,
+    string $newScope = null,
+    callable $resolve = null,
+    string $invoke = null,
+): Closure {
     return function () use ($callable, $newThis, $newScope, $resolve, $invoke) {
         $closure = closure($callable, resolve: $resolve, invoke: $invoke);
 
@@ -59,18 +61,19 @@ function bind(
         return $closure->bindTo(
             $newThis,
             $newScope ?? $newThis
-        )(...func_get_args());
+        )(
+            ...func_get_args()
+        );
     };
 }
 
 function call(
     callable|object|string $callable,
-    object                 $newThis = null,
-    string                 $newScope = null,
-    callable               $resolve = null,
-    string                 $invoke = null
-): mixed
-{
+    object $newThis = null,
+    string $newScope = null,
+    callable $resolve = null,
+    string $invoke = null
+): mixed {
     if (null === $newThis && null === $newScope) {
         return closure($callable)();
     }
@@ -84,10 +87,9 @@ function call(
  */
 function binding(
     callable|object|string $callable,
-    callable               $resolve = null,
-    string                 $invoke = null
-): ClosureBinding
-{
+    callable $resolve = null,
+    string $invoke = null
+): ClosureBinding {
     $closure = closure($callable, $resolve, $invoke);
 
     if (InvokableReflection::returnTypeIsClosure($callable, $invoke)) {

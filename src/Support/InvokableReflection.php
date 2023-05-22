@@ -29,9 +29,8 @@ abstract class InvokableReflection
      */
     public static function returnTypeIsClosure(
         string|object $object,
-        string        $invoke = null
-    ): bool
-    {
+        string $invoke = null
+    ): bool {
         $invoke = self::getInvokeMethod($invoke);
 
         return (new ReflectionClass($object))

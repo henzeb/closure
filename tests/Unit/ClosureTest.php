@@ -56,6 +56,21 @@ class ClosureTest extends TestCase
         $this->assertEquals('hello world', $closure('hello world'));
     }
 
+    public function testMemoizationOfResolved()
+    {
+        $class = new class {
+            private int $count = 0;
+
+            public function __invoke(): int
+            {
+                return ++$this->count;
+            }
+        };
+        $closure = closure($class::class);
+        $this->assertEquals(1, call($closure));
+        $this->assertEquals(2, call($closure));
+    }
+
     public function testFCQN()
     {
         $class = new class {
@@ -498,5 +513,14 @@ class ClosureTest extends TestCase
         $this->assertTrue(invokable($class, 'test'));
         $this->assertFalse(invokable($array));
         $this->assertFalse(invokable(STDIN));
+        $this->assertFalse(invokable(null));
+        $this->assertFalse(invokable(5));
+        $this->assertFalse(invokable(true));
+        $this->assertFalse(invokable(false));
+        $this->assertFalse(
+            invokable(
+                'random-not-existing-closure-string'
+            )
+        );
     }
 }

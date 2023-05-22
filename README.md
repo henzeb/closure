@@ -81,13 +81,15 @@ closure(
 ); // prints Hello World!
 ````
 
-Note: While `closure` throws a TypeError on creation, resolving of
-FQCN happens on actually calling the newly created closure.
+Note: While `closure` may throw a TypeError on creation, resolving of
+FQCN happens on actually calling the newly created closure. Resolving
+happens only the first time the closure is called.
 
 ### Binding
 
-Closures are hacky little creatures due to their ability to bind
-and change scopes. If you ever have that need you can use `bind`.
+Closures are adorable hacky little creatures due to their ability
+to bind and change scopes. If you ever have that need
+you can use `bind`.
 
 ````php
 use function Henzeb\Closure\bind;
