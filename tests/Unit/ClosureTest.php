@@ -7,6 +7,7 @@ use Exception;
 use Henzeb\Closure\Tests\Stubs\HelloWorld;
 use PHPUnit\Framework\TestCase;
 use TypeError;
+
 use function Henzeb\Closure\bind;
 use function Henzeb\Closure\binding;
 use function Henzeb\Closure\call;
@@ -47,6 +48,22 @@ class ClosureTest extends TestCase
                 public function __invoke($passable)
                 {
                     return $passable;
+                }
+            }
+        );
+
+        $this->assertInstanceOf(Closure::class, $closure);
+
+        $this->assertEquals('hello world', $closure('hello world'));
+    }
+
+    public function testClassWithReturningClosure()
+    {
+        $closure = closure(
+            new class {
+                public function __invoke(): Closure
+                {
+                    return fn($passable) => $passable;
                 }
             }
         );
@@ -396,7 +413,6 @@ class ClosureTest extends TestCase
             {
                 return bind(
                     function () {
-
                     },
                     $this->expected,
                     HelloWorld::class
@@ -424,7 +440,6 @@ class ClosureTest extends TestCase
             {
                 return bind(
                     function () {
-
                     },
                     $this->expected,
                     HelloWorld::class

@@ -30,6 +30,13 @@ class InvokableClass
     }
 }
 
+class ReturnsClosures
+{
+    public function __invoke(): Closure {
+        print fn()=>'Hello World!';
+    }
+}
+
 class NotInvokableClass
 {
     public function invoke() {
@@ -43,8 +50,10 @@ function helloWorld()
 }
 
 closure(Invokable::class)(); // prints Hello World!
-
 closure(new InvokableClass)(); // prints Hello World!
+
+closure(ReturnsClosure::class)(); // prints Hello World!
+closure(new ReturnsClosure())(); // prints Hello World!
 
 closure('helloWorld')(); // prints Hello World!
 
@@ -83,7 +92,8 @@ closure(
 
 Note: While `closure` may throw a TypeError on creation, resolving of
 FQCN happens on actually calling the newly created closure. Resolving
-happens only the first time the closure is called.
+happens only the first time. Except when the invokable method returns
+a Closure, then the resolving takes place first to return this closure.
 
 ### Binding
 
