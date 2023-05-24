@@ -31,6 +31,10 @@ abstract class InvokableReflection
         string|object $object,
         string $invoke = null
     ): bool {
+        if (!self::invokable($object, $invoke)) {
+            return false;
+        }
+
         $invoke = self::getInvokeMethod($invoke);
 
         return (new ReflectionClass($object))

@@ -565,4 +565,9 @@ class ClosureTest extends TestCase
         $this->assertEquals('hello world', wrap($class::class, invoke: 'test')());
         $this->assertEquals('hello world', wrap($class2::class, fn() => $class, 'test')());
     }
+
+    public function testClosureAsCallableWithAlternativeInvoke()
+    {
+        $this->assertEquals('test', closure(fn() => 'test', invoke: 'test')());
+    }
 }
