@@ -50,6 +50,20 @@ function closure(
     );
 }
 
+function wrap(
+    mixed $callable,
+    callable $resolve = null,
+    string $invoke = null
+): Closure {
+    if (!is_callable($callable)
+        && !InvokableReflection::invokable($callable, $invoke)
+    ) {
+        return fn() => $callable;
+    }
+
+    return closure($callable, $resolve, $invoke);
+}
+
 function bind(
     callable|object|string $callable,
     ?object $newThis,

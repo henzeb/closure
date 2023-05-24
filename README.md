@@ -210,6 +210,32 @@ invokable(STDIN); // returns false
 
 ````
 
+## Wrapping
+
+Sometimes you may expect a boolean or a callable. using `closure`,
+This would fail. Using `wrap`, anything that's not invokable, will
+be wrapped inside a closure.
+
+````php
+use function Henzeb\Closure\wrap;
+
+wrap(NonInvokable::class)(); // returns NonInvokable instance
+
+wrap(true)(); // returns true
+wrap(false)(); // returns true
+
+wrap(InvokableClass::class)(); // returns what __invoke would return
+
+wrap(
+    InvokableClass::class,
+    invoke: 'invokableMethod'
+)(); // returns what invokableMethod would return
+
+wrap([])(); // returns an empty array
+wrap(STDIN)(); // returns the STDIN stream
+
+````
+
 ## Bindings
 
 In some cases you might want to know the current binding of a

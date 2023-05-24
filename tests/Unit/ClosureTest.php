@@ -13,6 +13,7 @@ use function Henzeb\Closure\binding;
 use function Henzeb\Closure\call;
 use function Henzeb\Closure\closure;
 use function Henzeb\Closure\invokable;
+use function Henzeb\Closure\wrap;
 
 class ClosureTest extends TestCase
 {
@@ -537,5 +538,31 @@ class ClosureTest extends TestCase
                 'random-not-existing-closure-string'
             )
         );
+    }
+
+    public function testWrap()
+    {
+        $class = new class {
+            public function test()
+            {
+                return 'hello world';
+            }
+        };
+
+        $class2 = new class {
+            public function test()
+            {
+                return 'hello other world';
+            }
+        };
+
+        $this->assertTrue(wrap(true)());
+        $this->assertFalse(wrap(false)());
+        $this->assertSame(STDIN, wrap(STDIN)());
+        $this->assertSame($class, wrap($class)());
+        $this->assertSame($class::class, wrap($class::class)());
+        $this->assertEquals('hello world', wrap($class::class, invoke: 'test')());
+        $this->assertEquals('hello world', wrap($class::class, invoke: 'test')());
+        $this->assertEquals('hello world', wrap($class2::class, fn() => $class, 'test')());
     }
 }
