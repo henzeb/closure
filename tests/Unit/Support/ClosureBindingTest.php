@@ -7,6 +7,8 @@ use Henzeb\Closure\Support\ClosureBinding;
 use Henzeb\Closure\Tests\Stubs\HelloWorld;
 use PHPUnit\Framework\TestCase;
 
+use function Henzeb\Closure\binding;
+
 class ClosureBindingTest extends TestCase
 {
     public function testGetScopeWithoutBinding()
@@ -84,5 +86,131 @@ class ClosureBindingTest extends TestCase
         $this->assertSame(HelloWorld::class, $binding->getScope());
 
         $this->assertSame($expected, $binding->getThis());
+    }
+
+    public function testDebugInfo()
+    {
+        $closure = function () {
+        };
+
+        $expected = new class extends HelloWorld {
+        };
+
+        $binding = new ClosureBinding(
+            $closure->bindTo($expected, HelloWorld::class)
+        );
+
+        $this->assertSame([
+            'scope' => HelloWorld::class,
+            'this' => $expected
+        ], $binding->__debugInfo());
+    }
+
+    public function testDebugInfoWithVariables()
+    {
+        $thisVariable = $this;
+        $closure = function () use ($thisVariable) {
+        };
+
+        $expected = new class extends HelloWorld {
+        };
+
+        $binding = new ClosureBinding(
+            $closure->bindTo($expected, HelloWorld::class)
+        );
+
+        $this->assertSame(
+            [
+                'scope' => HelloWorld::class,
+                'this' => $expected,
+                'variables' => [
+                    'thisVariable' => $thisVariable
+                ]
+            ],
+            $binding->__debugInfo()
+        );
+    }
+
+    public function testDebugInfoWithStatic()
+    {
+        $thisVariable = $this;
+        $closure = function () use ($thisVariable) {
+            static $staticVar;
+            $staticVar = $thisVariable;
+        };
+
+        $binding = new ClosureBinding(
+            $closure
+        );
+
+        $this->assertSame(
+            [
+                'scope' => $this::class,
+                'this' => $this,
+                'variables' => [
+                    'thisVariable' => $thisVariable,
+                    'staticVar' => null,
+                ]
+            ],
+            $binding->__debugInfo()
+        );
+
+        $closure();
+
+        $this->assertSame(
+            [
+                'scope' => $this::class,
+                'this' => $this,
+                'variables' => [
+                    'thisVariable' => $thisVariable,
+                    'staticVar' => $thisVariable,
+                ]
+            ],
+            $binding->__debugInfo()
+        );
+    }
+
+    public function testDebugInfoWithUseOnNonBindedClosure()
+    {
+        $thisVariable = $this;
+        $closure = function () use ($thisVariable) {
+        };
+
+        $binding = new ClosureBinding(
+            $closure
+        );
+
+        $this->assertSame(
+            [
+                'scope' => $this::class,
+                'this' => $this,
+                'variables' => [
+                    'thisVariable' => $thisVariable
+                ]
+            ],
+            $binding->__debugInfo()
+        );
+    }
+
+    public function testGetUse()
+    {
+        $thisVariable = $this;
+        $closure = function () use ($thisVariable) {
+        };
+
+        $this->assertSame(
+            $thisVariable,
+            binding($closure)->get('thisVariable')
+        );
+    }
+
+    public function testGetNonExistentUse()
+    {
+        $closure = function () {
+        };
+
+        $this->assertNull(
+            binding($closure)->get('thisVariable')
+        );
     }
 }

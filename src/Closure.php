@@ -4,7 +4,7 @@ namespace Henzeb\Closure;
 
 use Closure;
 use Henzeb\Closure\Support\ClosureBinding;
-use Henzeb\Closure\Support\InvokableReflection;
+use Henzeb\Closure\Support\Invokable;
 use ReflectionException;
 use TypeError;
 
@@ -14,37 +14,31 @@ function closure(
     string $invoke = null
 ): Closure {
     if (is_callable($callable)
-        && !InvokableReflection::returnTypeIsClosure($callable, $invoke)
+        && !Invokable::returnsClosure($callable, $invoke)
     ) {
         return Closure::fromCallable($callable);
     }
 
-    if (!InvokableReflection::invokable($callable, $invoke)) {
+    $invoke = Invokable::getInvokeMethod($invoke);
+
+    if (!Invokable::isInvokable($callable, $invoke)) {
         throw new TypeError(
             sprintf(
-                'Failed to create closure from callable: class "%s" does not exist or is not invokable',
-                is_object($callable) ? $callable::class : $callable
+                'Failed to create closure from callable: class `%s` does not exist or does not implement `%s`',
+                is_object($callable) ? $callable::class : $callable,
+                $invoke
             )
         );
     }
 
-    $resolveInvokable = function () use ($resolve, $callable) {
-        if (is_object($callable)) {
-            return $callable;
-        }
-        return ($resolve ? $resolve($callable) : new $callable());
-    };
-
-    $invoke = InvokableReflection::getInvokeMethod($invoke);
-
-    if (InvokableReflection::returnTypeIsClosure($callable, $invoke)) {
-        return $resolveInvokable()->$invoke();
+    if (Invokable::returnsClosure($callable, $invoke)) {
+        return Invokable::resolve($callable, $resolve)->$invoke();
     }
 
     return Closure::fromCallable(
-        function () use ($resolveInvokable, $invoke) {
+        function () use ($callable, $resolve, $invoke) {
             static $resolved;
-            $resolved ??= $resolveInvokable();
+            $resolved ??= Invokable::resolve($callable, $resolve);
             return $resolved->$invoke(...func_get_args());
         }
     );
@@ -56,7 +50,7 @@ function wrap(
     string $invoke = null
 ): Closure {
     if (!is_callable($callable)
-        && !InvokableReflection::invokable($callable, $invoke)
+        && !Invokable::isInvokable($callable, $invoke)
     ) {
         return fn() => $callable;
     }
@@ -111,5 +105,5 @@ function binding(
 
 function invokable(mixed $object, string $invoke = null): bool
 {
-    return InvokableReflection::invokable($object, $invoke);
+    return Invokable::isInvokable($object, $invoke);
 }

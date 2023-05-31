@@ -9,14 +9,14 @@ use ReflectionException;
 /**
  * @internal
  */
-abstract class InvokableReflection
+abstract class Invokable
 {
     public static function getInvokeMethod(string $invoke = null): string
     {
         return $invoke ?? '__invoke';
     }
 
-    public static function invokable(mixed $object, string $invoke = null): bool
+    public static function isInvokable(mixed $object, string $invoke = null): bool
     {
         $invoke = self::getInvokeMethod($invoke);
 
@@ -27,11 +27,11 @@ abstract class InvokableReflection
     /**
      * @throws ReflectionException
      */
-    public static function returnTypeIsClosure(
+    public static function returnsClosure(
         string|object $object,
         string $invoke = null
     ): bool {
-        if (!self::invokable($object, $invoke)) {
+        if (!self::isInvokable($object, $invoke)) {
             return false;
         }
 
@@ -41,5 +41,14 @@ abstract class InvokableReflection
                 ->getMethod($invoke)
                 ->getReturnType()
                 ?->getName() === Closure::class;
+    }
+
+    public static function resolve(mixed $callable, ?callable $resolve): object
+    {
+        if (is_object($callable)) {
+            return $callable;
+        }
+
+        return ($resolve ? $resolve($callable) : new $callable());
     }
 }

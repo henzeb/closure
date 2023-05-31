@@ -5,7 +5,8 @@
 [![Total Downloads](https://img.shields.io/packagist/dt/henzeb/closure.svg?style=flat-square)](https://packagist.org/packages/henzeb/closure)
 [![License](https://img.shields.io/packagist/l/henzeb/closure)](https://packagist.org/packages/henzeb/closure)
 
-In PHP, whe have `Closure::fromCallable()`. Sadly it does not do strings.
+In PHP, whe have `Closure::fromCallable()`. Sadly, it does not work
+with FQCN strings.
 
 This package ships a function that extends fromCallable allowing
 FQCN strings of invokable classes to become closures.
@@ -248,6 +249,48 @@ binding(function(){})->getScope(); // returns $newScope value
 binding(function(){})->getThis(); // returns $newThis value
 
 ````
+
+### accessing static variables
+
+When you have closures that uses the `use` clause or when you
+use static variables inside your closure you can access them
+with the following:
+
+````php
+use function Henzeb\Closure\binding;
+
+$myVariable = 'Hello World!';
+
+$closure = function() use ($myVariable) {
+    static $myStaticVariable;
+
+    $myStaticVariable = 'Hello World!'
+}
+
+binding($closure)->get('myVariable'); // returns Hello World!
+binding($closure)->get('myOtherVariable'); // returns null.
+
+binding($closure)->get('myStaticVariable'); // returns null.
+
+$closure(); //calling the closure
+
+binding($closure)->get('myStaticVariable'); // returns Hello World!
+
+
+````
+
+### debug info
+
+You can use `var_dump` to print a list of all variables.
+
+````php
+use function Henzeb\Closure\binding;
+
+var_dump(binding(fn()=>true));
+````
+
+This will return an array with the current `scope`,
+the current `this` and any static variables associated with it.
 
 ## Testing this package
 

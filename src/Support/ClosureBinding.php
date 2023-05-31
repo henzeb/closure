@@ -20,25 +20,27 @@ class ClosureBinding
 
     public function getScope(): ?string
     {
-        $scope = $this->reflection->getClosureScopeClass()?->getName();
-
-        if ($scope) {
-            return $scope;
-        }
-
-        return $this->reflection->getStaticVariables()['newScope']
-            ?? null;
+        return $this->reflection->getClosureScopeClass()?->getName();
     }
 
     public function getThis(): ?object
     {
-        $object = $this->reflection->getClosureThis();
+        return $this->reflection->getClosureThis();
+    }
 
-        if ($object) {
-            return $object;
-        }
+    public function get(string $variable): mixed
+    {
+        return $this->reflection->getStaticVariables()[$variable] ?? null;
+    }
 
-        return $this->reflection->getStaticVariables()['newThis']
-            ?? null;
+    public function __debugInfo(): ?array
+    {
+        return array_filter(
+            [
+                'scope' => $this->getScope(),
+                'this' => $this->getThis(),
+                'variables' => $this->reflection->getStaticVariables()
+            ]
+        );
     }
 }

@@ -1,6 +1,6 @@
 {
     "name": "henzeb/closure",
-    "description": "Invoke Fully Qualified Class Name strings of invokable classes!",
+    "description": "Invoke classes using their FQCN, and more!",
     "keywords": [
         "henzeb",
         "closure",

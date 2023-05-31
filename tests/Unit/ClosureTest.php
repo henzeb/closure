@@ -110,7 +110,7 @@ class ClosureTest extends TestCase
     public function testNotInvokable()
     {
         $class = new class {
-            public function invoke($passable)
+            public function __invoke($passable)
             {
                 return $passable;
             }
@@ -119,13 +119,14 @@ class ClosureTest extends TestCase
         $this->expectException(TypeError::class);
         $this->expectExceptionMessage(
             sprintf(
-                'Failed to create closure from callable: class "%s" does not exist or is not invokable',
+                'Failed to create closure from callable: class `%s` does not exist or does not implement `invoke`',
                 $class::class
             )
         );
 
         closure(
-            $class::class
+            $class::class,
+            invoke: 'invoke'
         );
     }
 
@@ -134,8 +135,9 @@ class ClosureTest extends TestCase
         $this->expectException(TypeError::class);
         $this->expectExceptionMessage(
             sprintf(
-                'Failed to create closure from callable: class "%s" does not exist or is not invokable',
-                'ClassDoesNotExist'
+                'Failed to create closure from callable: class `%s` does not exist or does not implement `%s`',
+                'ClassDoesNotExist',
+                '__invoke'
             )
         );
 
