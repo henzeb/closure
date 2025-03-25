@@ -11,12 +11,12 @@ use ReflectionException;
  */
 abstract class Invokable
 {
-    public static function getInvokeMethod(string $invoke = null): string
+    public static function getInvokeMethod(?string $invoke = null): string
     {
         return $invoke ?? '__invoke';
     }
 
-    public static function isInvokable(mixed $object, string $invoke = null): bool
+    public static function isInvokable(mixed $object, ?string $invoke = null): bool
     {
         $invoke = self::getInvokeMethod($invoke);
 
@@ -29,7 +29,7 @@ abstract class Invokable
      */
     public static function returnsClosure(
         string|object $object,
-        string $invoke = null
+        ?string $invoke = null
     ): bool {
         if (!self::isInvokable($object, $invoke)) {
             return false;

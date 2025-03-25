@@ -1,216 +1,184 @@
 <?php
 
-namespace Henzeb\Closure\Tests\Unit\Support;
-
-use Closure;
 use Henzeb\Closure\Support\ClosureBinding;
 use Henzeb\Closure\Tests\Stubs\HelloWorld;
-use PHPUnit\Framework\TestCase;
 
 use function Henzeb\Closure\binding;
 
-class ClosureBindingTest extends TestCase
-{
-    public function testGetScopeWithoutBinding()
-    {
-        $closure = function () {
-        };
+test('get scope without binding', function () {
+    $closure = function () {
+    };
 
-        $binding = new ClosureBinding(
-            $closure
-        );
+    $binding = new ClosureBinding(
+        $closure
+    );
 
-        $this->assertSame(self::class, $binding->getScope());
+    expect($binding->getScope())->toBe(get_class($this));
+    expect($binding->getThis())->toBe($this);
+});
 
-        $this->assertSame($this, $binding->getThis());
-    }
+test('get scope bound to null', function () {
+    $closure = function () {
+    };
 
-    public function testGetScopeBoundToNull()
-    {
-        $closure = function () {
-        };
+    $binding = new ClosureBinding(
+        $closure->bindTo(null, null)
+    );
 
-        $binding = new ClosureBinding(
-            $closure->bindTo(null, null)
-        );
+    expect($binding->getScope())->toBeNull();
+    expect($binding->getThis())->toBeNull();
+});
 
-        $this->assertNull($binding->getScope());
+test('get scope bound to class without scope', function () {
+    $closure = function () {
+    };
 
-        $this->assertNull($binding->getThis());
-    }
+    $expected = new HelloWorld();
 
-    public function testGetScopeBoundToClassWithoutScope()
-    {
-        $closure = function () {
-        };
+    $binding = new ClosureBinding(
+        $closure->bindTo($expected, null)
+    );
 
-        $expected = new HelloWorld();
+    expect($binding->getScope())->toBe(Closure::class);
+    expect($binding->getThis())->toBe($expected);
+});
 
-        $binding = new ClosureBinding(
-            $closure->bindTo($expected, null)
-        );
+test('get scope bound to class with same scope', function () {
+    $closure = function () {
+    };
 
-        $this->assertSame(Closure::class, $binding->getScope());
+    $expected = new HelloWorld();
 
-        $this->assertSame($expected, $binding->getThis());
-    }
+    $binding = new ClosureBinding(
+        $closure->bindTo($expected, $expected)
+    );
 
-    public function testGetScopeBoundToClassWithSameScope()
-    {
-        $closure = function () {
-        };
+    expect($binding->getScope())->toBe($expected::class);
+    expect($binding->getThis())->toBe($expected);
+});
 
-        $expected = new HelloWorld();
+test('get scope bound to class with different scope', function () {
+    $closure = function () {
+    };
 
-        $binding = new ClosureBinding(
-            $closure->bindTo($expected, $expected)
-        );
+    $expected = new class extends HelloWorld {
+    };
 
-        $this->assertSame($expected::class, $binding->getScope());
+    $binding = new ClosureBinding(
+        $closure->bindTo($expected, HelloWorld::class)
+    );
 
-        $this->assertSame($expected, $binding->getThis());
-    }
+    expect($binding->getScope())->toBe(HelloWorld::class);
+    expect($binding->getThis())->toBe($expected);
+});
 
-    public function testGetScopeBoundToClassWithDifferentScope()
-    {
-        $closure = function () {
-        };
+test('debug info', function () {
+    $closure = function () {
+    };
 
-        $expected = new class extends HelloWorld {
-        };
+    $expected = new class extends HelloWorld {
+    };
 
-        $binding = new ClosureBinding(
-            $closure->bindTo($expected, HelloWorld::class)
-        );
+    $binding = new ClosureBinding(
+        $closure->bindTo($expected, HelloWorld::class)
+    );
 
-        $this->assertSame(HelloWorld::class, $binding->getScope());
+    expect($binding->__debugInfo())->toBe([
+        'scope' => HelloWorld::class,
+        'this' => $expected
+    ]);
+});
 
-        $this->assertSame($expected, $binding->getThis());
-    }
+test('debug info with variables', function () {
+    $thisVariable = $this;
+    $closure = function () use ($thisVariable) {
+    };
 
-    public function testDebugInfo()
-    {
-        $closure = function () {
-        };
+    $expected = new class extends HelloWorld {
+    };
 
-        $expected = new class extends HelloWorld {
-        };
+    $binding = new ClosureBinding(
+        $closure->bindTo($expected, HelloWorld::class)
+    );
 
-        $binding = new ClosureBinding(
-            $closure->bindTo($expected, HelloWorld::class)
-        );
-
-        $this->assertSame([
+    expect($binding->__debugInfo())->toBe(
+        [
             'scope' => HelloWorld::class,
-            'this' => $expected
-        ], $binding->__debugInfo());
-    }
+            'this' => $expected,
+            'variables' => [
+                'thisVariable' => $thisVariable
+            ]
+        ]
+    );
+});
 
-    public function testDebugInfoWithVariables()
-    {
-        $thisVariable = $this;
-        $closure = function () use ($thisVariable) {
-        };
+test('debug info with static', function () {
+    $thisVariable = $this;
+    $closure = function () use ($thisVariable) {
+        static $staticVar;
+        $staticVar = $thisVariable;
+    };
 
-        $expected = new class extends HelloWorld {
-        };
+    $binding = new ClosureBinding(
+        $closure
+    );
 
-        $binding = new ClosureBinding(
-            $closure->bindTo($expected, HelloWorld::class)
-        );
+    expect($binding->__debugInfo())->toBe(
+        [
+            'scope' => get_class($this),
+            'this' => $this,
+            'variables' => [
+                'thisVariable' => $thisVariable,
+                'staticVar' => null,
+            ]
+        ]
+    );
 
-        $this->assertSame(
-            [
-                'scope' => HelloWorld::class,
-                'this' => $expected,
-                'variables' => [
-                    'thisVariable' => $thisVariable
-                ]
-            ],
-            $binding->__debugInfo()
-        );
-    }
+    $closure();
 
-    public function testDebugInfoWithStatic()
-    {
-        $thisVariable = $this;
-        $closure = function () use ($thisVariable) {
-            static $staticVar;
-            $staticVar = $thisVariable;
-        };
+    expect($binding->__debugInfo())->toBe(
+        [
+            'scope' => get_class($this),
+            'this' => $this,
+            'variables' => [
+                'thisVariable' => $thisVariable,
+                'staticVar' => $thisVariable,
+            ]
+        ]
+    );
+});
 
-        $binding = new ClosureBinding(
-            $closure
-        );
+test('debug info with use on non binded closure', function () {
+    $thisVariable = $this;
+    $closure = function () use ($thisVariable) {
+    };
 
-        $this->assertSame(
-            [
-                'scope' => $this::class,
-                'this' => $this,
-                'variables' => [
-                    'thisVariable' => $thisVariable,
-                    'staticVar' => null,
-                ]
-            ],
-            $binding->__debugInfo()
-        );
+    $binding = new ClosureBinding(
+        $closure
+    );
 
-        $closure();
+    expect($binding->__debugInfo())->toBe(
+        [
+            'scope' => get_class($this),
+            'this' => $this,
+            'variables' => [
+                'thisVariable' => $thisVariable
+            ]
+        ]
+    );
+});
 
-        $this->assertSame(
-            [
-                'scope' => $this::class,
-                'this' => $this,
-                'variables' => [
-                    'thisVariable' => $thisVariable,
-                    'staticVar' => $thisVariable,
-                ]
-            ],
-            $binding->__debugInfo()
-        );
-    }
+test('get use', function () {
+    $thisVariable = $this;
+    $closure = function () use ($thisVariable) {
+    };
 
-    public function testDebugInfoWithUseOnNonBindedClosure()
-    {
-        $thisVariable = $this;
-        $closure = function () use ($thisVariable) {
-        };
+    expect(binding($closure)->get('thisVariable'))->toBe($thisVariable);
+});
 
-        $binding = new ClosureBinding(
-            $closure
-        );
+test('get non existent use', function () {
+    $closure = function () {
+    };
 
-        $this->assertSame(
-            [
-                'scope' => $this::class,
-                'this' => $this,
-                'variables' => [
-                    'thisVariable' => $thisVariable
-                ]
-            ],
-            $binding->__debugInfo()
-        );
-    }
-
-    public function testGetUse()
-    {
-        $thisVariable = $this;
-        $closure = function () use ($thisVariable) {
-        };
-
-        $this->assertSame(
-            $thisVariable,
-            binding($closure)->get('thisVariable')
-        );
-    }
-
-    public function testGetNonExistentUse()
-    {
-        $closure = function () {
-        };
-
-        $this->assertNull(
-            binding($closure)->get('thisVariable')
-        );
-    }
-}
+    expect(binding($closure)->get('thisVariable'))->toBeNull();
+});
