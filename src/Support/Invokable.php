@@ -11,6 +11,11 @@ use ReflectionException;
  */
 abstract class Invokable
 {
+    /**
+     * @var callable|null
+     */
+    private static $resolver;
+
     public static function getInvokeMethod(?string $invoke = null): string
     {
         return $invoke ?? '__invoke';
@@ -29,8 +34,9 @@ abstract class Invokable
      */
     public static function returnsClosure(
         string|object $object,
-        ?string $invoke = null
-    ): bool {
+        ?string       $invoke = null
+    ): bool
+    {
         if (!self::isInvokable($object, $invoke)) {
             return false;
         }
@@ -49,6 +55,19 @@ abstract class Invokable
             return $callable;
         }
 
-        return ($resolve ? $resolve($callable) : new $callable());
+        if ($resolve) {
+            return $resolve($callable);
+        }
+
+        if (self::$resolver) {
+            return (self::$resolver)($callable);
+        }
+
+        return new $callable();
+    }
+
+    public static function setResolver(?callable $resolver): void
+    {
+        self::$resolver = $resolver;
     }
 }

@@ -10,9 +10,10 @@ use TypeError;
 
 function closure(
     callable|object|string $callable,
-    ?callable $resolve = null,
-    ?string $invoke = null
-): Closure {
+    ?callable              $resolve = null,
+    ?string                $invoke = null
+): Closure
+{
     if (is_callable($callable)
         && !Invokable::returnsClosure($callable, $invoke)
     ) {
@@ -45,10 +46,11 @@ function closure(
 }
 
 function wrap(
-    mixed $callable,
+    mixed     $callable,
     ?callable $resolve = null,
-    ?string $invoke = null
-): Closure {
+    ?string   $invoke = null
+): Closure
+{
     if (!is_callable($callable)
         && !Invokable::isInvokable($callable, $invoke)
     ) {
@@ -60,11 +62,12 @@ function wrap(
 
 function bind(
     callable|object|string $callable,
-    ?object $newThis,
-    ?string $newScope = null,
-    ?callable $resolve = null,
-    ?string $invoke = null,
-): Closure {
+    ?object                $newThis,
+    ?string                $newScope = null,
+    ?callable              $resolve = null,
+    ?string                $invoke = null,
+): Closure
+{
     return closure(
         $callable,
         $resolve,
@@ -77,11 +80,12 @@ function bind(
 
 function call(
     callable|object|string $callable,
-    ?object $newThis = null,
-    ?string $newScope = null,
-    ?callable $resolve = null,
-    ?string $invoke = null
-): mixed {
+    ?object                $newThis = null,
+    ?string                $newScope = null,
+    ?callable              $resolve = null,
+    ?string                $invoke = null
+): mixed
+{
     if (null === $newThis && null === $newScope) {
         return closure($callable)();
     }
@@ -95,9 +99,10 @@ function call(
  */
 function binding(
     callable|object|string $callable,
-    ?callable $resolve = null,
-    ?string $invoke = null
-): ClosureBinding {
+    ?callable              $resolve = null,
+    ?string                $invoke = null
+): ClosureBinding
+{
     return new ClosureBinding(
         closure($callable, $resolve, $invoke)
     );
@@ -106,4 +111,9 @@ function binding(
 function invokable(mixed $object, ?string $invoke = null): bool
 {
     return Invokable::isInvokable($object, $invoke);
+}
+
+function resolver(?callable $resolver): void
+{
+    Invokable::setResolver($resolver);
 }

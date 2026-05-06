@@ -7,6 +7,7 @@ use function Henzeb\Closure\binding;
 use function Henzeb\Closure\call;
 use function Henzeb\Closure\closure;
 use function Henzeb\Closure\invokable;
+use function Henzeb\Closure\resolver;
 use function Henzeb\Closure\wrap;
 
 test('anonymous function', function () {
@@ -484,4 +485,73 @@ test('wrap', function () {
 
 test('closure as callable with alternative invoke', function () {
     expect(closure(fn() => 'test', invoke: 'test')())->toBe('test');
+});
+
+afterEach(fn() => resolver(null));
+
+test('resolver is used when no per-call resolver provided', function () {
+    $class = new class {
+        public function __construct(private string $value = '')
+        {
+        }
+
+        public function __invoke(): string
+        {
+            return $this->value;
+        }
+    };
+
+    resolver(fn($fqcn) => new $fqcn('from global resolver'));
+
+    expect(closure($class::class)())->toBe('from global resolver');
+});
+
+test('per-call resolver takes precedence over global resolver', function () {
+    $class = new class {
+        public function __construct(private string $value = '')
+        {
+        }
+
+        public function __invoke(): string
+        {
+            return $this->value;
+        }
+    };
+
+    resolver(fn($fqcn) => new $fqcn('from global resolver'));
+
+    expect(
+        closure($class::class, fn($fqcn) => new $fqcn('from per-call resolver'))()
+    )->toBe('from per-call resolver');
+});
+
+test('resolver null clears global resolver and falls back to new instance', function () {
+    $class = new class {
+        public function __invoke(): string
+        {
+            return 'default';
+        }
+    };
+
+    resolver(fn($fqcn) => new $fqcn());
+    resolver(null);
+
+    expect(closure($class::class)())->toBe('default');
+});
+
+test('global resolver is used for wrap with invokable class', function () {
+    $class = new class {
+        public function __construct(private string $value = '')
+        {
+        }
+
+        public function test(): string
+        {
+            return $this->value;
+        }
+    };
+
+    resolver(fn($fqcn) => new $fqcn('from global resolver'));
+
+    expect(wrap($class::class, invoke: 'test')())->toBe('from global resolver');
 });

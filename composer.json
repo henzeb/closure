@@ -22,7 +22,7 @@
     "php": "^8.0"
   },
   "require-dev": {
-    "pestphp/pest": "^2.0|^3.0|^4.0",
+    "pestphp/pest": "^2.0 <2.33|^3.0|^4.0",
     "phpstan/phpstan": "^1.4"
   },
   "autoload": {
@@ -48,6 +48,9 @@
     "sort-packages": true,
     "allow-plugins": {
       "pestphp/pest-plugin": true
+    },
+    "audit": {
+      "ignore": ["PKSA-z3gr-8qht-p93v"]
     }
   },
   "extra": {

@@ -96,6 +96,37 @@ FQCN happens on actually calling the newly created closure. Resolving
 happens only the first time. Except when the invokable method returns
 a Closure, then the resolving takes place first to return this closure.
 
+### Global resolver
+
+Instead of passing a `$resolve` callback to every call, you can register a
+global resolver that is used as a fallback whenever no per-call resolver is
+provided. This is useful for integrating a Dependency Injection container.
+
+````php
+use function Henzeb\Closure\resolver;
+use function Henzeb\Closure\closure;
+
+resolver(fn(string $class) => $container->make($class));
+
+closure(InvokableClass::class)(); // resolved via the global resolver
+````
+
+The global resolver is only invoked when no per-call `$resolve` argument is
+given. Passing a resolver inline still takes precedence:
+
+````php
+closure(
+    InvokableClass::class,
+    fn(string $class) => new $class('inline wins')
+)();
+````
+
+To remove the global resolver, pass `null`:
+
+````php
+resolver(null);
+````
+
 ### Binding
 
 Closures are adorable hacky little creatures due to their ability
