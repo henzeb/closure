@@ -33,7 +33,7 @@ class ClosureBinding
         return $this->reflection->getStaticVariables()[$variable] ?? null;
     }
 
-    public function __debugInfo(): ?array
+    public function __debugInfo(): array
     {
         return array_filter(
             [
